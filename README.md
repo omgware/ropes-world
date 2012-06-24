@@ -9,9 +9,16 @@ Author: Simone Autore (aka Sippolo)
 This project is a simple tech demo on how you could possibly develop a game like the famous Cut The Rope, using Box2D, and is developed with the awesome LibGDX java game framework: http://libgdx.badlogicgames.com/
 I've almost re-implemented the first 8 levels from the original Cut The Rope demo on the web (http://www.cuttherope.ie/) plus one experimental level of mine, which makes use of a funny spring jump platform.
 
+
 - Run Instruction:
 
 Make sure you have jre6+ installed on your machine, then just run the RopesWorld.jar
+
+
+- IDE Integration:
+
+You should be able to import the project directly into Eclipse and compile it without issues.
+
 
 - Android platform
 
