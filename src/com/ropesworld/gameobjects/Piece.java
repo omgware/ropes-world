@@ -19,10 +19,7 @@ public class Piece {
 	public float restitution = 0.5f;
 	public float gravityScale = 1.0f;
 	public boolean isMainChar = false;
-	public boolean isPortalAllowed = false;
 	public boolean isSensor = false;
-	public boolean isPortalIn = false;
-	public boolean isPortalOut = false;
 	public boolean isCreated = false;
 	public boolean isEnemy = false;
 	public static final Vector2 zeroVector 		= new Vector2(0,0);
@@ -40,10 +37,7 @@ public class Piece {
 		this.restitution = anotherPiece.restitution;
 		this.gravityScale = anotherPiece.gravityScale;
 		this.isMainChar = anotherPiece.isMainChar;
-		this.isPortalAllowed = anotherPiece.isPortalAllowed;
 		this.isSensor = anotherPiece.isSensor;
-		this.isPortalIn = anotherPiece.isPortalIn;
-		this.isPortalOut = anotherPiece.isPortalOut;
 		this.isCreated = anotherPiece.isCreated;
 		this.isEnemy = anotherPiece.isEnemy;
 	}
@@ -95,24 +89,8 @@ public class Piece {
 		return this;
 	}
 	
-	public Piece setPortalIn(boolean value) {
-		this.isPortalIn = value;
-		return this;
-	}
-	
-	public Piece setPortalOut(boolean value) {
-		this.isPortalOut = value;
-		return this;
-	}
-	
 	public Piece setMainChar(boolean value) {
 		this.isMainChar = value;
-		this.isPortalAllowed = true;
-		return this;
-	}
-	
-	public Piece setPortalAllowed(boolean value) {
-		this.isPortalAllowed = value;
 		return this;
 	}
 	

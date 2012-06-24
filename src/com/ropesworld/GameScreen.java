@@ -31,7 +31,6 @@ import com.ropesworld.gameobjects.GenericUseObject;
 import com.ropesworld.gameobjects.MainCharObject;
 import com.ropesworld.gameobjects.ObjectInfo;
 import com.ropesworld.gameobjects.Piece;
-import com.ropesworld.gameobjects.Portal;
 import com.ropesworld.gameobjects.Rope;
 import com.ropesworld.gameobjects.StarObject;
 
@@ -52,7 +51,6 @@ public class GameScreen implements Screen, InputProcessor {
 	public static final float FRICTION_DAMPING 			= IS_DESKTOP ? 0.0001f : 0.005f;
 	public static final Vector2 ZERO_VECTOR				= new Vector2(0,0);
 	public static final boolean ALLOW_DRAG				= false; 
-	public static final float PORTAL_FORCE_OUT 			= IS_DESKTOP ? 15000 : 15000 / 60f;
 	public static final float TICKS_PER_SECOND 			= 60;
 	public static final float SKIP_TICKS 				= 1 / TICKS_PER_SECOND;
 	public static final int MAX_FRAMESKIP 				= 5;
@@ -67,8 +65,6 @@ public class GameScreen implements Screen, InputProcessor {
 	public RopesWorld game;
 	
 	public ArrayList<Piece> pieceTemplates = new ArrayList<Piece>();
-	public ArrayList<Portal> portalIn = new ArrayList<Portal>();
-	public ArrayList<Portal> portalOut = new ArrayList<Portal>();
 	public ArrayList<Rope> ropes = new ArrayList<Rope>();
 	public OrthographicCamera camera;
 	public Box2DDebugRenderer renderer;
@@ -189,20 +185,6 @@ public class GameScreen implements Screen, InputProcessor {
 		}
 
 		// Populate level with elements
-		// PortalIns
-		createBodyAndFixture(getNewPieceInstanceFromTemplate(7).setSensor(true).setPortalIn(true), -8, 1);
-		portalIn.add(new Portal(tempFixture, 90, PORTAL_FORCE_OUT));
-		createBodyAndFixture(getNewPieceInstanceFromTemplate(0).setSensor(true).setPortalIn(true), 22, 2);
-		portalIn.add(new Portal(tempFixture, 180, PORTAL_FORCE_OUT));
-		createBodyAndFixture(getNewPieceInstanceFromTemplate(0).setSensor(true).setPortalIn(true), -22, 2);
-		portalIn.add(new Portal(tempFixture, 0, PORTAL_FORCE_OUT));
-		// PortalOut
-		createBodyAndFixture(getNewPieceInstanceFromTemplate(8).setSensor(true).setPortalOut(true), 23, 19);
-		portalOut.add(new Portal(tempFixture, 90, PORTAL_FORCE_OUT));
-		createBodyAndFixture(getNewPieceInstanceFromTemplate(1).setSensor(true).setPortalIn(true), -23, 28);
-		portalOut.add(new Portal(tempFixture, 0, PORTAL_FORCE_OUT));
-		createBodyAndFixture(getNewPieceInstanceFromTemplate(1).setSensor(true).setPortalIn(true), -1, 28);
-		portalOut.add(new Portal(tempFixture, 0, PORTAL_FORCE_OUT));
 		// All the other elements
 		createBodyAndFixture(getNewPieceInstanceFromTemplate(2), -19, 24);
 		createBodyAndFixture(getNewPieceInstanceFromTemplate(3), -19, 19);
@@ -346,9 +328,6 @@ public class GameScreen implements Screen, InputProcessor {
 			if (piece.shape instanceof CircleShape) {
 				((ObjectInfo)tempFixture.getBody().getUserData()).isSphere = true;
 			}
-			if (piece.isPortalAllowed) {
-				((ObjectInfo)tempFixture.getBody().getUserData()).isPortalAllowed = true;
-			}
 			if (piece.isMainChar) {
 				((ObjectInfo)tempFixture.getBody().getUserData()).isMainChar = true;
 			}
@@ -361,12 +340,8 @@ public class GameScreen implements Screen, InputProcessor {
 		starsOwned = 0;
 		// Reallocate arrays
 		pieceTemplates = new ArrayList<Piece>(60);
-		portalIn = new ArrayList<Portal>(20);
-		portalOut = new ArrayList<Portal>(20);
-		/** Portal In vertical **/
-		addNewPieceTemplate((new Piece(0.5f, 1.5f, 0, BodyType.StaticBody)).setSensor(true).setPortalIn(true)); // 0
-		/** Portal Out vertical **/
-		addNewPieceTemplate((new Piece(0.5f, 1.5f, 0, BodyType.StaticBody)).setSensor(true).setPortalOut(true)); // 1
+		addNewPieceTemplate((new Piece(0.5f, 1.5f, 0, BodyType.StaticBody)).setSensor(true)); // 0
+		addNewPieceTemplate((new Piece(0.5f, 1.5f, 0, BodyType.StaticBody)).setSensor(true)); // 1
 		/** Box (2,4) DynamicBody **/
 		addNewPieceTemplate(new Piece(1, 2, 0, BodyType.DynamicBody)); // 2
 		/** Box (8,2) StaticBody **/
@@ -377,10 +352,8 @@ public class GameScreen implements Screen, InputProcessor {
 		addNewPieceTemplate(new Piece(1, BodyType.DynamicBody)); // 5
 		/** Circle 2.0 DynamicBody **/
 		addNewPieceTemplate(new Piece(2, BodyType.DynamicBody)); // 6
-		/** Portal In horizontal **/
-		addNewPieceTemplate((new Piece(1.5f, 0.5f, 0, BodyType.StaticBody)).setSensor(true).setPortalIn(true)); // 7
-		/** Portal Out horizontal **/
-		addNewPieceTemplate((new Piece(1.5f, 0.5f, 0, BodyType.StaticBody)).setSensor(true).setPortalOut(true)); // 8
+		addNewPieceTemplate((new Piece(1.5f, 0.5f, 0, BodyType.StaticBody)).setSensor(true)); // 7
+		addNewPieceTemplate((new Piece(1.5f, 0.5f, 0, BodyType.StaticBody)).setSensor(true)); // 8
 		/** Mini Circle **/
 		addNewPieceTemplate(new Piece(0.5f, BodyType.DynamicBody)); // 9
 		/** Mini Circle **/
@@ -741,8 +714,6 @@ public class GameScreen implements Screen, InputProcessor {
 	public void dispose() {
 		renderer.dispose();
 		pieceTemplates.clear();
-		portalIn.clear();
-		portalOut.clear();
 		ropes.clear();
 		stars.clear();
 		gravityBalls.clear();
@@ -786,68 +757,6 @@ public class GameScreen implements Screen, InputProcessor {
 		}
 		destroyMainCharJoints = false;
 	}
-	
-	public QueryCallback portalInCallback = new QueryCallback() {
-		@Override
-		public boolean reportFixture (Fixture fixture) {
-			if (fixture.getBody().getType() != BodyType.StaticBody && !fixture.isSensor() && ((ObjectInfo)fixture.getBody().getUserData()).isPortalAllowed) {
-				// Prevent portal looping
-				if (!((ObjectInfo)fixture.getBody().getUserData()).hasTimePassed(300))
-					return true;
-				for (int i=0; i<portalIn.size(); i++) {
-					if (portalIn.get(i).fixture.testPoint(fixture.getBody().getPosition().x, fixture.getBody().getPosition().y)) {
-						logicHitBody = fixture.getBody();
-						if (logicHitBody != null) {
-							logicHitBody.setTransform(portalOut.get(i).getBody().getPosition(), 0);
-							if (portalOut.get(i).normal != null) {
-								// New velocity angle
-								//System.out.println("vel: "+logicHitBody.getLinearVelocity().angle()+" norm: " + portalOut.get(i).normal.angle()+" angle: " + portalOut.get(i).angle);
-								logicHitBody.setLinearVelocity(logicHitBody.getLinearVelocity().rotate(portalOut.get(i).angle - logicHitBody.getLinearVelocity().angle()));
-								// Apply a little more linear force
-								logicHitBody.applyForceToCenter(portalOut.get(i).transferForce);
-							}
-							// Destroy Joint
-							destroyMainCharJoints = true;
-							if (fixture.getBody().getUserData() != null)
-								((ObjectInfo)fixture.getBody().getUserData()).updateTime();
-						}
-					}
-				}
-			}
-			return true;
-		}
-	};
-	
-	
-	public QueryCallback portalOutCallback = new QueryCallback() {
-		@Override
-		public boolean reportFixture (Fixture fixture) {
-			if (fixture.getBody().getType() != BodyType.StaticBody && !fixture.isSensor() && ((ObjectInfo)fixture.getBody().getUserData()).isPortalAllowed) {
-				// Prevent portal looping
-				if (!((ObjectInfo)fixture.getBody().getUserData()).hasTimePassed(300))
-					return true;
-				for (int i=0; i<portalIn.size(); i++) {
-					if (portalOut.get(i).fixture.testPoint(fixture.getBody().getPosition().x, fixture.getBody().getPosition().y)) {
-						logicHitBody = fixture.getBody();
-						if (logicHitBody != null) {
-							logicHitBody.setTransform(portalIn.get(i).getBody().getPosition(), 0);
-							if (portalIn.get(i).normal != null) {
-								// New velocity angle
-								logicHitBody.setLinearVelocity(logicHitBody.getLinearVelocity().rotate(portalIn.get(i).normal.angle() - logicHitBody.getLinearVelocity().angle()));
-								// Apply a little more linear force
-								logicHitBody.applyForceToCenter(portalIn.get(i).transferForce);
-							}
-							// Destroy Joint
-							destroyMainCharJoints = true;
-							if (fixture.getBody().getUserData() != null)
-								((ObjectInfo)fixture.getBody().getUserData()).updateTime();
-						}
-					}
-				}
-			}
-			return true;
-		}
-	};
 	
 	public QueryCallback enemyCallback = new QueryCallback() {
 		@Override
@@ -1002,15 +911,7 @@ public class GameScreen implements Screen, InputProcessor {
 				stand.used = true;
 			}
 		}
-		
-		/** PORTALS **/
 		logicHitBody = null;
-		if (portalIn.size() > 0 && portalOut.size() > 0 && portalIn.size() == portalOut.size()) {
-			for (int i=0; i<portalIn.size(); i++) {
-				world.QueryAABB(portalInCallback, portalIn.get(i).getX() - 0.5f, portalIn.get(i).getY() - 1.5f, portalIn.get(i).getX() + 0.5f, portalIn.get(i).getY() + 1.5f);
-				world.QueryAABB(portalOutCallback, portalOut.get(i).getX() - 0.5f, portalOut.get(i).getY() - 1.5f, portalOut.get(i).getX() + 0.5f, portalOut.get(i).getY() + 1.5f);
-			}
-		}
 		
 		/** PHYSICS **/
 		destroyOutOfWorldTimeCheck += deltaTime;
