@@ -14,6 +14,8 @@ I've almost re-implemented the first 8 levels from the original Cut The Rope dem
 
 Make sure you have jre6+ installed on your machine, then just run the RopesWorld.jar
 
+Download Builds: you can find the zip file of the build in the Downloads section on this repository, just make sure you extract all the files before executing the jar/bat, otherwise it may not run at all.
+
 
 - IDE Integration:
 
